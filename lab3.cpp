@@ -70,7 +70,43 @@ void fft(Iter_T a, Iter_T b, int log2n)
 	}
 }
 //koniec fft
-
+int checkFirst(vector<double> x, int val) {
+	int i = 0, first = 0;
+	while (x[i] < val && i < x.size()) {
+		first = i;
+		i++;
+	}
+	return first;
+}
+int checkLast(vector<double> x, int val) {
+	int last = 0;
+	for (size_t i = 0; i < x.size(); i++)
+	{
+		if(x[i]>val) last = i;
+	}
+	return last;
+}
+void checkRange(vector<double> x, int val) {
+	int range = checkLast(x, val)- checkFirst(x, val);
+	printf("Range: %d\n", range);
+}
+vector<double> moveScale(vector<double> x) {
+	vector<double> result;
+	double max = *max_element(x.begin(), x.end());
+	for (int i = 0; i < x.size(); i++) {
+		result.push_back(x[i] - max);
+	}
+	return result;
+}
+vector<double> translateToDecibels(vector<double> x, int val) {
+	vector<double> result;
+	for (int i = 0; i < x.size(); i++) {
+		result.push_back(10 * log10(x[i]));
+	}
+	result = moveScale(result);
+	checkRange(result,-val);
+	return result;
+}
 void adaptToComplex(vector<double> x, complex<double>* a) {
 	for (int i = 0; i < N; i++) {
 		a[i] = complex<double>(x[i], 0);
@@ -175,7 +211,7 @@ void drawModulationPlots(double* kA, double* kP) {
 	}
 }
 
-void drawSpectrum(vector<double> x, string title) {
+void drawSpectrum(vector<double> x, string title, int mode = 0,int val = 0) {
 	adaptToComplex(x, a);
 	fft(a, b, lg2n);
 	vector<double> freq;
@@ -184,14 +220,21 @@ void drawSpectrum(vector<double> x, string title) {
 		freq.push_back(i * fs / N);
 		magnitude.push_back(abs(b[i]) / N);
 	}
+	if (mode) magnitude = translateToDecibels(magnitude,val);
 	plt::plot(freq, magnitude);
 	plt::grid();
-	plt::savefig(title);
+	if (mode) {
+		plt::ylim(-val, val);
+		plt::show();
+	}
+
+	if(!mode)plt::savefig(title);
 	plt::clf();
 }
 
 
 int main() {
+	int b = 12;
 	double kA[] = { 0.5, 8, 50 };
 	double kP[] = { -5, 3, 10 };
 	drawModulationPlots(kA, kP);
@@ -203,6 +246,18 @@ int main() {
 		drawSpectrum(s1[1], zp + stringset[i] + wid + extension);
 		vector<vector<double>> s2 = modulate(kP[i], 3);
 		drawSpectrum(s2[1], zf + stringset[i] + wid + extension);
+	}
+
+	for (int i = 0; i < 3; i++) {
+		vector<vector<double>> s = modulate(kA[i], 1);
+		cout << za + stringset[i] << " b"<<b<< endl;
+		drawSpectrum(s[1], za + stringset[i] + wid + extension,1, b);
+		vector<vector<double>> s1 = modulate(kP[i], 2);
+		cout << zp + stringset[i] << " b" << b << endl;
+		drawSpectrum(s1[1], zp + stringset[i] + wid + extension,1,b);
+		vector<vector<double>> s2 = modulate(kP[i], 3);
+		cout << zf + stringset[i] << " b" << b << endl;
+		drawSpectrum(s2[1], zf + stringset[i] + wid + extension,1,b);
 	}
 
 
