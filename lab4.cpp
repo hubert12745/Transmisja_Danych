@@ -11,13 +11,13 @@ namespace plt = matplotlibcpp;
 #define M_PI 3.14159265358979323846
 
 
-int fs = 8000;
+int fs = 1000;
 int Tc = 1;
 //int n = (int)floor(Tc * fs);
 //int lg2n = (int)log2(n);
 //const int N = pow(2, lg2n);
 //const int N_freq = (int)N / 2;
-const int N = Tc * fs;
+const int N = (int)floor(Tc * fs);
 int lg2n = (int)log2(N);
 const int N_fft = pow(2, lg2n);
 const int N_freq = (int)N_fft / 2;
@@ -74,11 +74,43 @@ void fft(Iter_T a, Iter_T b, int log2n)
 	}
 }
 //koniec fft
-
-vector<double> translateToDecibels(vector<double> x) {
+int checkFirst(vector<double> x, int val) {
+	int i = 0, first = 0;
+	while (x[i] < val && i < x.size()) {
+		first = i;
+		i++;
+	}
+	return first;
+}
+int checkLast(vector<double> x, int val) {
+	int last = 0;
+	for (size_t i = 0; i < x.size(); i++)
+	{
+		if (x[i] > val) last = i;
+	}
+	return last;
+}
+void checkRange(vector<double> x, int val) {
+	int range = checkLast(x, val) - checkFirst(x, val);
+	cout << range << endl;
+}
+vector<double> moveScale(vector<double> x) {
+	vector<double> result;
+	double max = *max_element(x.begin(), x.end());
+	for (int i = 0; i < x.size(); i++) {
+		result.push_back(x[i] - max);
+	}
+	return result;
+}
+vector<double> translateToDecibels(vector<double> x, int val) {
 	vector<double> result;
 	for (int i = 0; i < x.size(); i++) {
 		result.push_back(10 * log10(x[i]));
+	}
+	
+	if (val != 0) {
+		result = moveScale(result);
+		checkRange(result, -val);
 	}
 	return result;
 }
@@ -88,7 +120,8 @@ void adaptToComplex(vector<double> x, complex<double>* a) {
 	}
 }
 
-void drawSpectrum(vector<double> x, string title, int mode = 0, int val = 0) {
+void drawSpectrum(vector<double> x, string title, int value, bool save = 0) {
+
 	adaptToComplex(x, a);
 	fft(a, b, lg2n);
 	vector<double> freq;
@@ -97,18 +130,18 @@ void drawSpectrum(vector<double> x, string title, int mode = 0, int val = 0) {
 		freq.push_back(i * fs / N);
 		magnitude.push_back(abs(b[i]) / N);
 	}
-	if (mode) magnitude = translateToDecibels(magnitude);
+	magnitude = translateToDecibels(magnitude,value);
 	plt::plot(freq, magnitude);
 	plt::grid();
-	if (mode) {
-		plt::ylim(-val, val);
-		plt::show();
-	}
-
-	if (!mode)plt::savefig(title);
+	//if (value != 0) {
+	//	plt::ylim(-value, value);
+	//	plt::show();
+	//}
+	save ? plt::show() : plt::savefig(title);
+	//if (save)plt::savefig(title);
 	plt::clf();
 }
-vector<double> time() {
+vector<double> timeVector() {
 	vector<double> t;
 
 	for (int i = 0; i < N; i++) {
@@ -118,8 +151,9 @@ vector<double> time() {
 	return t;
 }
 
-vector<double> ASK(vector<double> time) {
-
+vector<vector<double>> ASK() {
+	vector<vector<double>> result;
+	vector<double> time = timeVector();
 	vector<double> s(N);
 	int z = (int)Tbp;
 
@@ -138,73 +172,108 @@ vector<double> ASK(vector<double> time) {
 			}
 		}
 	}
-	return s;
-}vector<double> PSK(vector<double> time) {
+	result.push_back(time);
+	result.push_back(s);
+	return result;
+}
+	vector<vector<double>> PSK() {
+		vector<vector<double>> result;
+		vector<double> time = timeVector();
+		vector<double> s(N);
+		int z = (int)Tbp;
 
-	vector<double> s(N);
-	int z = (int)Tbp;
+		for (int i = 0; i < B.size(); i++) {
+			int start = i * z;
+			int end = start + z;
+			for (int j = start; j < end; j++) {
+				if (B[i] == 0) {
 
-	for (int i = 0; i < B.size(); i++) {
-		int start = i * z;
-		int end = start + z;
-		for (int j = start; j < end; j++) {
-			if (B[i] == 0) {
-
-				double a1 = sin(2 * M_PI * fn * time[j]);
-				s[j] = a1;
-			}
-			else {
-				double a2 = sin(2 * M_PI * fn * time[j]+M_PI);
-				s[j] = a2;
+					double a1 = sin(2 * M_PI * fn * time[j]);
+					s[j] = a1;
+				}
+				else {
+					double a2 = sin(2 * M_PI * fn * time[j] + M_PI);
+					s[j] = a2;
+				}
 			}
 		}
+		result.push_back(time);
+		result.push_back(s);
+		return result;
 	}
-	return s;
-}vector<double> FSK(vector<double> time) {
-	double fn1 = (double)(W+1)/Tb;
-	double fn2 = (double)(W+2)/Tb;
-	vector<double> s(N);
-	int z = (int)Tbp;
+	vector<vector<double>> FSK() {
+		vector<vector<double>> result;
+		vector<double> time = timeVector();
+		double fn1 = (double)(W + 1) / Tb;
+		double fn2 = (double)(W + 2) / Tb;
+		vector<double> s(N);
+		int z = (int)Tbp;
 
-	for (int i = 0; i < B.size(); i++) {
-		int start = i * z;
-		int end = start + z;
-		for (int j = start; j < end; j++) {
-			if (B[i] == 0) {
+		for (int i = 0; i < B.size(); i++) {
+			int start = i * z;
+			int end = start + z;
+			for (int j = start; j < end; j++) {
+				if (B[i] == 0) {
 
-				double a1 = sin(2 * M_PI * fn1 * time[j]);
-				s[j] = a1;
-			}
-			else {
-				double a2 = sin(2 * M_PI * fn2 * time[j]);
-				s[j] = a2;
+					double a1 = sin(2 * M_PI * fn1 * time[j]);
+					s[j] = a1;
+				}
+				else {
+					double a2 = sin(2 * M_PI * fn2 * time[j]);
+					s[j] = a2;
+				}
 			}
 		}
+		result.push_back(time);
+		result.push_back(s);
+		return result;
 	}
-	return s;
-}
 
+	void drawPlots(bool show = false) {
+		vector<vector<double>> ask = ASK();
+		plt::plot(ask[0], ask[1]);
+		plt::grid(true);
+		if(show) plt::show();
+		plt::savefig("za.png");
+		plt::clf();
+		vector<vector<double>> psk = PSK();
+		plt::plot(psk[0], psk[1]);
+		plt::grid(true);
+		if (show) plt::show();
+		plt::savefig("zp.png");
+		plt::clf();
+		vector<vector<double>> fsk = FSK();
+		plt::plot(psk[0], fsk[1]);
+		plt::grid(true);
+		if (show) plt::show();
+		plt::savefig("zf.png");
+		plt::clf();
+	}
+	void drawSpectrums(int val, bool save = 0) {
+		vector<vector<double>> ask = ASK();
+		if (val != 0) cout << "ASK: ";
+		drawSpectrum(ask[1], "za_widmo.png",val, save);
+		vector<vector<double>> psk = PSK();
+		if (val != 0) cout << "PSK: ";
+		drawSpectrum(psk[1], "zp_widmo.png",val, save);
+		vector<vector<double>> fsk = FSK();
+		if (val != 0) cout << "FSK: ";
+		drawSpectrum(fsk[1], "zf_widmo.png",val,save);
+	}
+	
 
-int main() {
-	vector<double> t = time();
-	vector<double> ask = ASK(t);
-	cout << "_____________________" << endl;
-	cout << ask.size() << endl;
-	plt::plot(t, ask);
-	plt::grid(true);
-	plt::savefig("za.png");
-	plt::clf();
-	vector<double> psk = PSK(t);
-	plt::plot(t, psk);
-	plt::grid(true);
-	plt::savefig("zp.png");
-	plt::clf();
-	vector<double> fsk = FSK(t);
-	plt::plot(t, fsk);
-	plt::grid(true);
-	plt::savefig("zf.png");
-	plt::clf();
+	int main() {
+		vector<int> bd = { 3, 6, 12 };
+		drawPlots();
+		fn = 250;
 
-	return 0;
-}
+		drawSpectrums(0,true);
+
+		for (int i : bd) {
+			cout << "B" << i << "D: "<<endl;
+			drawSpectrums(i);
+			cout << endl;
+		}
+		return 0;
+	}
 
