@@ -229,6 +229,51 @@ vector<vector<double>> ASK() {
 		return result;
 	}
 
+	vector<double> multiplyBySine(vector<double> signal) {
+		vector<double> time = timeVector();
+
+		int z = (int)Tbp;
+		int size = signal.size();
+		vector<double> s(size);
+		for (int i = 0; i < size; i++) {
+			double a = sin(2*M_PI * fn * time[i]);
+			s[i] = a;
+		}
+		for (int i = 0; i < size; i++) {
+			double a = signal[i] * s[i];
+			s[i] = a;
+		}
+		return s;
+	}
+	void multiplyPlot(vector<vector<double>> (*func)()) {
+		vector<vector<double>> result = func();
+		result[1] = multiplyBySine(result[1]);
+		plt::plot(result[0], result[1]);
+		plt::show();
+	}
+
+	vector<vector<double>> calculateSum(vector<vector<double>>(*func)()) {
+		vector<vector<double>> data = func();
+		vector<double> s = multiplyBySine(data[1]);
+		vector<double> sumSignal(s.size());
+		double sum = 0;
+		int z = (int)Tbp;
+		for (int i = 0; i < B.size(); i++) {
+			int start = i * z;
+			int end = start + z;
+			sum = 0;
+			//cout << "\t bit:"<< i <<endl;
+			for (int j = start; j < end; j++) {
+				double a = s[j];
+				sum += a;
+				sumSignal[j] = sum;
+				//cout << sum << endl;
+			}
+		}
+		data[1] = sumSignal;
+		return data;
+
+	}
 	void drawPlots(bool show = false) {
 		vector<vector<double>> ask = ASK();
 		plt::plot(ask[0], ask[1]);
@@ -250,6 +295,8 @@ vector<vector<double>> ASK() {
 		plt::clf();
 	}
 	void drawSpectrums(int val, bool save = 0) {
+		int oldFn = fn;
+		fn = 250;
 		vector<vector<double>> ask = ASK();
 		if (val != 0) cout << "ASK: ";
 		drawSpectrum(ask[1], "za_widmo.png",val, save);
@@ -259,21 +306,27 @@ vector<vector<double>> ASK() {
 		vector<vector<double>> fsk = FSK();
 		if (val != 0) cout << "FSK: ";
 		drawSpectrum(fsk[1], "zf_widmo.png",val,save);
+		fn = oldFn;
 	}
 	
 
 	int main() {
 		vector<int> bd = { 3, 6, 12 };
-		drawPlots();
-		fn = 250;
+		//drawPlots();
+		//fn = 250;
+		vector<vector<double>> ask = calculateSum(ASK);
+		
+		plt::plot(ask[0], ask[1]);
+		plt::show();
+		plt::clf();
+		//multiplyPlot(ASK);
+		//drawSpectrums(0,true);
 
-		drawSpectrums(0,true);
-
-		for (int i : bd) {
-			cout << "B" << i << "D: "<<endl;
-			drawSpectrums(i);
-			cout << endl;
-		}
+		//for (int i : bd) {
+		//	cout << "B" << i << "D: "<<endl;
+		//	drawSpectrums(i);
+		//	cout << endl;
+		//}
 		return 0;
 	}
 
