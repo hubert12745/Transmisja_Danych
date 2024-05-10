@@ -229,15 +229,30 @@ vector<vector<double>> ASK() {
 		return result;
 	}
 
-	vector<double> multiplyBySine(vector<double> signal) {
+	vector<double> multiplyBySine(vector<double> signal, int mode = 0) {
 		vector<double> time = timeVector();
-
+		double fn1 = (double)(W + 1) / Tb;
+		double fn2 = (double)(W + 2) / Tb;
 		int z = (int)Tbp;
 		int size = signal.size();
 		vector<double> s(size);
-		for (int i = 0; i < size; i++) {
-			double a = sin(2*M_PI * fn * time[i]);
-			s[i] = a;
+		if (mode == 0) {
+			for (int i = 0; i < size; i++) {
+				double a = sin(2 * M_PI * fn * time[i]);
+				s[i] = a;
+			}
+		}
+		else if (mode == 1) {
+			for (int i = 0; i < size; i++) {
+				double a = sin(2 * M_PI * fn1 * time[i]);
+				s[i] = a;
+			}
+		}
+		else if (mode == 2) {
+			for (int i = 0; i < size; i++) {
+				double a = sin(2 * M_PI * fn2 * time[i]);
+				s[i] = a;
+			}
 		}
 		for (int i = 0; i < size; i++) {
 			double a = signal[i] * s[i];
@@ -255,6 +270,29 @@ vector<vector<double>> ASK() {
 	vector<vector<double>> calculateSum(vector<vector<double>>(*func)()) {
 		vector<vector<double>> data = func();
 		vector<double> s = multiplyBySine(data[1]);
+		vector<double> sumSignal(s.size());
+		double sum = 0;
+		int z = (int)Tbp;
+		for (int i = 0; i < B.size(); i++) {
+			int start = i * z;
+			int end = start + z;
+			sum = 0;
+			//cout << "\t bit:"<< i <<endl;
+			for (int j = start; j < end; j++) {
+				double a = s[j];
+				sum += a;
+				sumSignal[j] = sum;
+				//cout << sum << endl;
+			}
+		}
+		data[1] = sumSignal;
+		return data;
+
+	}
+
+	vector<vector<double>> calculateSumFSK(int mode = 0) {
+		vector<vector<double>> data = FSK();
+		vector<double> s = multiplyBySine(data[1],mode);
 		vector<double> sumSignal(s.size());
 		double sum = 0;
 		int z = (int)Tbp;
@@ -317,6 +355,20 @@ vector<vector<double>> ASK() {
 		vector<vector<double>> ask = calculateSum(ASK);
 		
 		plt::plot(ask[0], ask[1]);
+		plt::show();
+		plt::clf();
+
+		vector<vector<double>> psk = calculateSum(PSK);
+		plt::plot(psk[0], psk[1]);
+		plt::show();
+		plt::clf();
+
+		vector<vector<double>> fsk = calculateSumFSK(1);
+		plt::plot(fsk[0], fsk[1]);
+		plt::show();
+		plt::clf();
+		vector<vector<double>> fsk2 = calculateSumFSK(2);
+		plt::plot(fsk2[0], fsk2[1]);
 		plt::show();
 		plt::clf();
 		//multiplyPlot(ASK);
