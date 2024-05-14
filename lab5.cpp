@@ -375,13 +375,13 @@ vector<int> binarizeData(vector<double> x, int mode) {
 	case 0: {
 		trigger = 0;
 		for (int i = 0; i < x.size(); i++)
-			result[i] = (x[i] < trigger) ? 1 : 0;
+			result[i] = (x[i] > trigger) ? 1 : 0;
 		break;
 	}
 	case 1: {
 		trigger = 0;
 		for (int i = 0; i < x.size(); i++)
-			result[i] = (x[i] > trigger) ? 1 : 0;
+			result[i] = (x[i] < trigger) ? 1 : 0;
 		break;
 	}
 
