@@ -441,66 +441,98 @@ void z() {
 	drawPlots();
 }
 void x() {
-	vector<vector<double>> ask = calculateSum(ASK);
+
+	vector<vector<double>> ask = ASK();
+	ask[1] = multiplyBySine(ask[1]);
 	plt::plot(ask[0], ask[1]);
 	plt::title("ASK_x");
 	plt::grid(true);
 	plt::savefig("plots/zad5/ask_x.png");
 	plt::clf();
 
-	vector<vector<double>> psk = calculateSum(PSK);
+	vector<vector<double>> psk = PSK();
+	psk[1] = multiplyBySine(psk[1]);
 	plt::plot(psk[0], psk[1]);
 	plt::title("PSK_x");
 	plt::grid(true);
-	plt::savefig("plots/zad5/PSK_x.png");
+	plt::savefig("plots/zad5/psk_x.png");
 	plt::clf();
 
-	vector<vector<double>> fsk1 = calculateSum(1);
+	vector<vector<double>> fsk1 = FSK();
+	fsk1[1] = multiplyBySine(fsk1[1], 1);
 	plt::plot(fsk1[0], fsk1[1]);
 	plt::title("FSK_x1");
 	plt::grid(true);
-	plt::savefig("plots/zad5/FSK_x1.png");
+	plt::savefig("plots/zad5/fsk_x1.png");
 	plt::clf();
 
-	vector<vector<double>> fsk2 = calculateSum(2);
+	vector<vector<double>> fsk2 = FSK();
+	fsk2[1] = multiplyBySine(fsk2[1], 2);
 	plt::plot(fsk2[0], fsk2[1]);
 	plt::title("FSK_x2");
 	plt::grid(true);
-	plt::savefig("plots/zad5/FSK_x2.png");
+	plt::savefig("plots/zad5/fsk_x2.png");
 	plt::clf();
 }
 
 void p() {
 	vector<vector<double>> ask = calculateSum(ASK);
-	vector<int> askB = binarizeData(ask[1], 2);
-	plt::plot(ask[0], askB);
+	//vector<int> askB = binarizeData(ask[1], 2);
+	plt::plot(ask[0], ask[1]);
 	plt::title("ASK_p");
 	plt::grid(true);
 	plt::savefig("plots/zad5/ask_p.png");
 	plt::clf();
 
 	vector<vector<double>> psk = calculateSum(PSK);
-	vector<int> pskB = binarizeData(psk[1], 1);
-	plt::plot(psk[0], pskB);
+	//vector<int> pskB = binarizeData(psk[1], 1);
+	plt::plot(psk[0], psk[1]);
 	plt::title("PSK_p");
 	plt::grid(true);
-	plt::savefig("plots/zad5/PSK_p.png");
+	plt::savefig("plots/zad5/psk_p.png");
 	plt::clf();
 
 	vector<vector<double>> fsk1 = calculateSum(1);
-	vector<int> fsk1B = binarizeData(fsk1[1], 0);
-	plt::plot(fsk1[0], fsk1B);
+	//vector<int> fsk1B = binarizeData(fsk1[1], 0);
+	plt::plot(fsk1[0], fsk1[1]);
 	plt::title("FSK_p1");
 	plt::grid(true);
-	plt::savefig("plots/zad5/FSK_p1.png");
+	plt::savefig("plots/zad5/fsk_p1.png");
 	plt::clf();
 
 	vector<vector<double>> fsk2 = calculateSum(2);
-	vector<int> fsk2B = binarizeData(fsk2[1], 0);
-	plt::plot(fsk2[0], fsk2B);
+	//vector<int> fsk2B = binarizeData(fsk2[1], 0);
+	plt::plot(fsk2[0], fsk2[1]);
 	plt::title("FSK_p2");
 	plt::grid(true);
-	plt::savefig("plots/zad5/FSK_p2.png");
+	plt::savefig("plots/zad5/fsk_p2.png");
+	plt::clf();
+
+	vector<vector<double>> fsk = combineFSK();
+	//vector<int> fskB = binarizeData(fsk[1], 0);
+	plt::plot(fsk[0], fsk[1]);
+	plt::title("FSK_p");
+	plt::grid(true);
+	plt::savefig("plots/zad5/fsk_p.png");
+	plt::clf();
+
+}
+
+void c() {
+	vector<vector<double>> ask = calculateSum(ASK);
+	vector<int> askB = binarizeData(ask[1], 2);
+	plt::plot(ask[0], askB);
+	plt::title("ASK_c");
+	plt::grid(true);
+	plt::savefig("plots/zad5/ask_c.png");
+	plt::clf();
+
+	vector<vector<double>> psk = calculateSum(PSK);
+	vector<int> pskB = binarizeData(psk[1], 1);
+	plt::plot(psk[0], pskB);
+	plt::title("PSK_c");
+	plt::grid(true);
+	plt::savefig("plots/zad5/psk_c.png");
 	plt::clf();
 
 	vector<vector<double>> fsk = combineFSK();
@@ -508,37 +540,11 @@ void p() {
 	plt::plot(fsk[0], fskB);
 	plt::title("FSK_p");
 	plt::grid(true);
-	plt::savefig("plots/zad5/FSK_p.png");
+	plt::savefig("plots/zad5/fsk_c.png");
 	plt::clf();
 
 }
-void c() {
-		vector<vector<double>> ask = calculateSum(ASK);
 
-	vector<int> askF = fitToBits(ask[1], 2);
-	plt::plot(ask[0], askF);
-	plt::title("ASK_c");
-	plt::grid(true);
-	plt::savefig("plots/zad5/ask_c.png");
-	plt::clf();
-
-	vector<vector<double>> psk = calculateSum(PSK);
-
-	vector<int> pskF = fitToBits(psk[1], 1);
-	plt::plot(psk[0], pskF);
-	plt::title("PSK_c");
-	plt::grid(true);
-	plt::savefig("plots/zad5/PSK_c.png");
-	plt::clf();
-
-	vector<vector<double>> fsk = combineFSK();
-	vector<int> fskF = fitToBits(fsk[1], 0);
-	plt::plot(fsk[0], fskF);
-	plt::title("FSK_c");
-	plt::grid(true);
-	plt::savefig("plots/zad5/FSK_c.png");
-	plt::clf();	
-}
 
 void cCompared() {
 	vector<vector<double>> ask = calculateSum(ASK);
@@ -574,7 +580,8 @@ void cCompared() {
 
 
 int main() {
-
+	plt::figure();
+	plt::figure_size(1000, 250);
 	z();
 	x();
 	p();
