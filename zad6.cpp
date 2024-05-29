@@ -1,8 +1,11 @@
 #include <vector>
 #include <iostream>
+#include "mgmath.hpp"
+//#include "linalg.h"
+
 using namespace std;
 
-vector<bool> coder(vector<bool> input) {
+vector<bool> encoder(vector<bool> input) {
 	if (input.size() != 4) {
 		throw std::invalid_argument("received invalid sized vector");
 	}
@@ -60,12 +63,43 @@ vector<bool> decoder(vector<bool> input) {
 	}
 	return temp;
 }
+class Hamming {
+public:
+	static const int k = 11, n = 15;
+	int m = n - k;
+
+	mgm::mat<k, k, int> I;
+	//mgm::mat<11, 4, int> G;
+
+	void print(mgm::mat<k,k,int> m) {
+		for (int i = 0; i < 11; i++) {
+			for (int j = 0; j < 11; j++) {
+				cout << m[i][j] << " ";
+			}
+			cout << endl;
+		}
+	}
+	void eye(){
+		for (int i = 0; i < k; i++) {
+			I[i][i] = 1;
+		}
+	}
+	//linalg::mat<int, 4,4> I;
+
+
+};
+
 
 int main() {
 	vector<bool> input = {1, 1, 0, 1};
-	vector<bool> output = coder(input);
+	vector<bool> output = encoder(input);
 	cout << endl;
 	output[5] = !output[5];
 	decoder(output);
+	Hamming h;
+	h.print(h.I);
+	cout << endl;
+	h.eye();
+	h.print(h.I);
 	return 0;
 }

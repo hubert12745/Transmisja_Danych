@@ -18,6 +18,12 @@
     <ClInclude Include="matplotlibcpp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="linalg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mgmath.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="zad6.cpp">
