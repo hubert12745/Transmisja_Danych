@@ -67,37 +67,59 @@ class Hamming {
 public:
 	static const int k = 11, n = 15;
 	static const int m = n - k;
+	int x1, x2, x4, x8;
+
 
 	MatrixXi I = Matrix<int, k, k>::Identity();
-	Matrix<int, k, m> P;
+	MatrixXi P;
 	Matrix<int, k, n> G;
 	MatrixXi data = MatrixXi::Zero(1,k);
+	MatrixXi H;
+
+	void removeRow(MatrixXi& matrix, unsigned int rowToRemove) {
+		unsigned int numRows = matrix.rows() - 1;
+		unsigned int numCols = matrix.cols();
+
+		if (rowToRemove < numRows)
+			matrix.block(rowToRemove, 0, numRows - rowToRemove, numCols) = matrix.block(rowToRemove + 1, 0, numRows - rowToRemove, numCols);
+
+		matrix.conservativeResize(numRows, numCols);
+	}
+	void generateH() {
+		MatrixXi i = Matrix<int, n-k,n-k>::Identity();
+		MatrixXi pt = P.transpose();
+		H.resize(m, n);
+		H << i,pt;
+	}
 	void generateG() {
-		G << I, P;
+		G.resize(k, n);
+		G << P, I;
+
 	}
+
+
 	void fillP() {
-		P << 0, 0, 1, 1,
-			0, 1, 0, 1,
-			0, 1, 1, 0,
-			0, 1, 1, 1,
-			1, 0, 0, 1,
-			1, 0, 1, 0,
-			1, 0, 1, 1,
-			1, 1, 0, 0,
-			1, 1, 0, 1,
-			1, 1, 1, 0,
-			1, 1, 1, 1;
+		P = Matrix<int,n+1,m>::Zero(n + 1, m);
+		for (int i = 0; i < n + 1; i++) {
+			for (int j = 0; j < m; j++) {
+				P(i, j) = (i >> j) & 1;
+			}
+		}
+		removeRow(P, 0);
+		for (int i = 1,  delCount = 1; i < n + 1; i *= 2) {
+			int idx = i - delCount;
+			removeRow(P, i - delCount);
+			delCount++;
+		}
 	}
+
 
 	Hamming(MatrixXi data) {
 		fillP();
 		generateG();
+		generateH();
 		this->data = data;
 	}
-	//mgm::mat<k, k, int> I;
-	//mgm::mat<k, m, int> P;
-	//mgm::mat<11, 15, int> G;
-
 
 	void printI() {
 		cout << I << endl;
@@ -108,18 +130,55 @@ public:
 	void printG() {
 		cout << G << endl;
 	}
-
+	void printH() {
+		cout << H << endl;
+	}
+	MatrixXi moduloMatrix(MatrixXi matrix, int num) {
+		MatrixXi result = MatrixXi::Zero(matrix.rows(), matrix.cols());
+		result = (matrix.array() - (num * (matrix.array() / num))).matrix();
+		return result;
+	}
 
 	MatrixXi encode() {
-		MatrixXi result = MatrixXi::Zero(1, n);
+		Matrix<int, 1, n> result = (data * G);
+		Matrix<int, 1, n> modArr = moduloMatrix(result, 2);
 		cout << "Data: " << data << endl;
-		cout << "G: " << G << endl;
-		result = data * G;
-		for (int i = 0; i < n; i++) {
-			result(0, i) = result(0, i) % 2;
+		cout << "Encoded data: " << modArr << endl;
+		return modArr;
+	}
+	MatrixXi decode(MatrixXi& encodedMessage) {
+	
+		MatrixXi syndrome = moduloMatrix(encodedMessage * H.transpose(), 2);
+		MatrixXi message = encodedMessage;
+
+		int errorPos = 0;
+		for (int j = 0; j < syndrome.cols(); j++) {
+			errorPos += syndrome(0, j) << j;
 		}
-		cout << "Encoded data: " << result << endl;
-		return result;
+
+		cout << "Syndrome as binary: ";
+		for (int i = 0; i < syndrome.cols(); ++i) {
+			cout << syndrome(0, i) << " ";
+		}
+		cout << "\nCalculated error position : " << errorPos << endl;
+
+
+		if (errorPos > 0) {
+			message(0, errorPos - 1) ^= 1;
+			cout << "Error detected and corrected at position " << errorPos << endl;
+		}
+		else {
+			cout << "No errors detected." << endl;
+		}
+
+		MatrixXi originalData = message.block(0, m, 1, k);
+		cout << "Decoded data: ";
+		for (int i = 0; i < originalData.cols(); ++i) {
+			cout << originalData(0, i) << " ";
+		}
+		cout << endl;
+
+		return originalData;
 	}
 };
 
@@ -132,14 +191,39 @@ int main() {
 	decoder(output);
 
 	MatrixXi data(1,11);
-	data << 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1;
+	data << 1,1,0,0,0,0,1,0,0,1,0;
 	Hamming h(data);
 	//h.printI();
 	//h.fillP();
 	//h.printP();
 	//h.generateG();
 	//h.printG();
-	h.encode();
+	MatrixXi result(1, 15);
+	cout << endl;
+	result = h.encode();
+
+	//cout<< "result: "<<endl;
+	//cout << result << endl;
+
+	cout << "Simulating error: " << endl;
+	for (int i = 4; i < h.n;) {
+		cout <<endl << "Error at index " << i << endl;
+		cout << "Result without error: " << endl;
+		cout << result << endl;
+		result(0, i) ^= 1;
+		cout << "Result with error: " << endl;
+		cout << result << endl;
+		h.decode(result);
+		result(0, i) ^= 1;
+		i++;
+	}
+	
+	/*cout << result << endl;
+	MatrixXi decoded = h.decode(result);
+	cout << "Decoded data: " << endl;
+	cout << decoded << endl;
+	cout << "Data: " << endl;
+	 cout << data << endl;*/
 	//cout << endl;
 	//h.eye();
 	//h.print(h.I);
