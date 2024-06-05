@@ -204,20 +204,24 @@ int main() {
 
 	//cout<< "result: "<<endl;
 	//cout << result << endl;
-
-	cout << "Simulating error: " << endl;
-	for (int i = 4; i < h.n;) {
-		cout <<endl << "Error at index " << i << endl;
-		cout << "Result without error: " << endl;
-		cout << result << endl;
-		result(0, i) ^= 1;
-		cout << "Result with error: " << endl;
-		cout << result << endl;
-		h.decode(result);
-		result(0, i) ^= 1;
-		i++;
-	}
-	
+	result(0, 3) ^= 1;
+	h.decode(result);
+	//cout << "Simulating error: " << endl;
+	//for (int i = 0; i < h.n;) {
+	//	cout <<endl << "Error at index " << i << endl;
+	//	cout << "Result without error: " << endl;
+	//	cout << result << endl;
+	//	result(0, i) ^= 1;
+	//	cout << "Result with error: " << endl;
+	//	cout << result << endl;
+	//	h.decode(result);
+	//	result(0, i) ^= 1;
+	//	i++;
+	//}
+	//h.printP();
+	//h.printG();
+	//h.printH();
+	//cout << "Result: " << endl;
 	/*cout << result << endl;
 	MatrixXi decoded = h.decode(result);
 	cout << "Decoded data: " << endl;

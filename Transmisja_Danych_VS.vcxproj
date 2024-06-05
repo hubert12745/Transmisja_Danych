@@ -142,7 +142,7 @@
     <ClInclude Include="mgmath.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="zad6.cpp" />
+    <ClCompile Include="zad7.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
