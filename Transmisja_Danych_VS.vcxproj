@@ -137,9 +137,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="linalg.h" />
     <ClInclude Include="matplotlibcpp.h" />
-    <ClInclude Include="mgmath.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="zad7.cpp" />
