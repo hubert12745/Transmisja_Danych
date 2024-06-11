@@ -15,28 +15,6 @@ namespace plt = matplotlibcpp;
 #define M_PI 3.14159265358979323846
 
 
-int fs = 1000;
-int Tc = 1;
-//int n = (int)floor(Tc * fs);
-//int lg2n = (int)log2(n);
-//const int N = pow(2, lg2n);
-//const int N_freq = (int)N / 2;
-const int N = (int)floor(Tc * fs);
-int lg2n = (int)log2(N);
-const int N_fft = pow(2, lg2n);
-const int N_freq = (int)N_fft / 2;
-int w = 1;
-int W = 2;
-vector<int> B = { 1,1,0,0,0,0,1,0,1,0,1,0,0,0,0,1,1,1,1,0,0,0,0,1,0,0,0,1,1,1,1,1,0,0,1,0,1,1,1,1,1,0,0,0 };
-int M = w * B.size();
-double Tb = (double)Tc / M;
-double Tbp = (double)Tb * fs;
-double fn = W * 1 / Tb;
-double A1 = 1.0 / 2.0;
-double A2 = 2.0;
-
-complex<double>* a = new complex<double>[N];
-complex<double>* b = new complex<double>[N];
 class Hamming {
 public:
 	static const int k = 11, n = 15;
@@ -47,7 +25,6 @@ public:
 	MatrixXi I = Matrix<int, k, k>::Identity();
 	MatrixXi P;
 	Matrix<int, k, n> G;
-	//MatrixXi data = MatrixXi::Zero(1, k);
 	MatrixXi H;
 
 	void removeRow(MatrixXi& matrix, unsigned int rowToRemove) {
@@ -135,6 +112,7 @@ public:
 			cout << syndrome(0, i) << " ";
 		}
 		cout << "\nCalculated error position : " << errorPos << endl;*/
+		
 
 
 		if (errorPos > 0) {
@@ -176,7 +154,8 @@ private:
 	double A1 = 1.0 / 2.0;
 	double A2 = 2.0;
 	vector<int> B;
-
+	complex<double>* a = new complex<double>[N];
+	complex<double>* b = new complex<double>[N];
 	public:
 		Modulator(vector<int> B) {
 			this->B = B;
@@ -225,73 +204,7 @@ private:
 			}
 		}
 		//koniec fft
-		//int checkFirst(vector<double> x, int val) {
-		//	int i = 0, first = 0;
-		//	while (x[i] < val && i < x.size()) {
-		//		first = i;
-		//		i++;
-		//	}
-		//	return first;
-		//}
-		//int checkLast(vector<double> x, int val) {
-		//	int last = 0;
-		//	for (size_t i = 0; i < x.size(); i++)
-		//	{
-		//		if (x[i] > val) last = i;
-		//	}
-		//	return last;
-		//}
-		//void checkRange(vector<double> x, int val) {
-		//	int range = checkLast(x, val) - checkFirst(x, val);
-		//	cout << range << endl;
-		//}
-		//vector<double> moveScale(vector<double> x) {
-		//	vector<double> result;
-		//	double max = *max_element(x.begin(), x.end());
-		//	for (int i = 0; i < x.size(); i++) {
-		//		result.push_back(x[i] - max);
-		//	}
-		//	return result;
-		//}
-		//vector<double> translateToDecibels(vector<double> x, int val) {
-		//	vector<double> result;
-		//	for (int i = 0; i < x.size(); i++) {
-		//		result.push_back(10 * log10(x[i]));
-		//	}
 
-		//	if (val != 0) {
-		//		result = moveScale(result);
-		//		checkRange(result, -val);
-		//	}
-		//	return result;
-		//}
-		//void adaptToComplex(vector<double> x, complex<double>* a) {
-		//	for (int i = 0; i < N; i++) {
-		//		a[i] = complex<double>(x[i], 0);
-		//	}
-		//}
-
-		//void drawSpectrum(vector<double> x, string title, int value, bool save = 0) {
-
-		//	adaptToComplex(x, a);
-		//	fft(a, b, lg2n);
-		//	vector<double> freq;
-		//	vector<double> magnitude;
-		//	for (int i = 0; i < N_freq; i++) {
-		//		freq.push_back(i * fs / N);
-		//		magnitude.push_back(abs(b[i]) / N);
-		//	}
-		//	magnitude = translateToDecibels(magnitude, value);
-		//	plt::plot(freq, magnitude);
-		//	plt::grid();
-		//	//if (value != 0) {
-		//	//	plt::ylim(-value, value);
-		//	//	plt::show();
-		//	//}
-		//	save ? plt::show() : plt::savefig(title);
-		//	//if (save)plt::savefig(title);
-		//	plt::clf();
-		//}
 		vector<double> timeVector() {
 			vector<double> t;
 
@@ -302,25 +215,6 @@ private:
 			return t;
 		}
 
-		//vector<int> bitsVec() {
-		//	vector<int> s(N);
-		//	int z = (int)Tbp;
-
-		//	for (int i = 0; i < B.size(); i++) {
-		//		int start = i * z;
-		//		int end = start + z;
-		//		for (int j = start; j < end; j++) {
-		//			if (B[i] == 0) {
-		//				s[j] = 0;
-		//			}
-		//			else {
-		//				s[j] = 1;
-		//			}
-		//		}
-		//	}
-
-		//	return s;
-		//}
 		vector<vector<double>> ASK() {
 			vector<vector<double>> result;
 			vector<double> time = timeVector();
@@ -613,7 +507,7 @@ int main() {
 	for (int i = 0; i < message.size(); i += frameSize) {
 		vector<int> frame;
 		for (int j = i; j < i + frameSize; j++) {
-			frame.push_back(B[j]);
+			frame.push_back(message[j]);
 		}
 		frames.push_back(frame);
 	}
