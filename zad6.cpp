@@ -4,12 +4,12 @@
 
 using namespace std;
 using namespace Eigen;
-vector<bool> encoder(vector<bool> input) {
+vector<int> encoder(vector<int> input) {
 	if (input.size() != 4) {
 		throw std::invalid_argument("received invalid sized vector");
 	}
-	vector<bool> output(7);
-	bool x1, x2, x4;
+	vector<int> output(7);
+	int x1, x2, x4;
 	output[2] = input[0];
 	output[4] = input[1];
 	output[5] = input[2];
@@ -27,12 +27,12 @@ vector<bool> encoder(vector<bool> input) {
 	return output;
 }
 
-vector<bool> decoder(vector<bool> input) {
+vector<int> decoder(vector<int> input) {
 	if (input.size() != 7) {
 		throw std::invalid_argument("received invalid sized vector");
 	}
-	vector<bool> temp = input;
-	bool x1p, x2p, x4p, x1s, x2s, x4s;
+	vector<int> temp = input;
+	int x1p, x2p, x4p, x1s, x2s, x4s;
 	x1p = input[2] ^ input[4] ^ input[6];
 	x2p = input[2] ^ input[5] ^ input[6];
 	x4p = input[4] ^ input[5] ^ input[6];
@@ -55,7 +55,7 @@ vector<bool> decoder(vector<bool> input) {
 
 		cout << endl << "Error detected at position " << s << endl;
 		cout << "Corrected output: ";
-		temp[s - 1] = !temp[s - 1];
+		temp[s - 1] ^= 1;
 		for (auto b : temp) {
 			cout << b << " ";
 		}
@@ -148,8 +148,12 @@ public:
 	}
 	MatrixXi decode(MatrixXi& encodedMessage) {
 	
-		MatrixXi syndrome = moduloMatrix(encodedMessage * H.transpose(), 2);
 		MatrixXi message = encodedMessage;
+		Matrix<int, 1, 15> reorderedMatrix;
+		reorderedMatrix << message(0, 0), message(0, 1), message(0, 3), message(0, 7), message(0, 2), message(0, 4), message(0, 5),
+			message(0, 6), message(0, 8), message(0, 9), message(0, 10), message(0, 11), message(0, 12), message(0, 13), message(0, 14);
+
+		MatrixXi syndrome = moduloMatrix(reorderedMatrix * H.transpose(), 2);
 
 		int errorPos = 0;
 		for (int j = 0; j < syndrome.cols(); j++) {
@@ -162,16 +166,15 @@ public:
 		}
 		cout << "\nCalculated error position : " << errorPos << endl;
 
-
 		if (errorPos > 0) {
-			message(0, errorPos - 1) ^= 1;
+			reorderedMatrix(0, errorPos - 1) ^= 1;
 			cout << "Error detected and corrected at position " << errorPos << endl;
 		}
 		else {
 			cout << "No errors detected." << endl;
 		}
 
-		MatrixXi originalData = message.block(0, m, 1, k);
+		MatrixXi originalData = reorderedMatrix.block(0, m, 1, k);
 		cout << "Decoded data: ";
 		for (int i = 0; i < originalData.cols(); ++i) {
 			cout << originalData(0, i) << " ";
@@ -182,54 +185,60 @@ public:
 	}
 };
 
-
-int main() {
-	vector<bool> input = { 1, 1, 0, 1 };
-	vector<bool> output = encoder(input);
-	cout << endl;
-	output[5] = !output[5];
-	decoder(output);
-
-	MatrixXi data(1,11);
-	data << 1,1,0,0,0,0,1,0,0,1,0;
-	Hamming h(data);
-	//h.printI();
-	//h.fillP();
-	//h.printP();
-	//h.generateG();
-	//h.printG();
-	MatrixXi result(1, 15);
-	cout << endl;
-	result = h.encode();
-
-	//cout<< "result: "<<endl;
-	//cout << result << endl;
-	result(0, 3) ^= 1;
-	h.decode(result);
-	//cout << "Simulating error: " << endl;
-	//for (int i = 0; i < h.n;) {
-	//	cout <<endl << "Error at index " << i << endl;
-	//	cout << "Result without error: " << endl;
-	//	cout << result << endl;
-	//	result(0, i) ^= 1;
-	//	cout << "Result with error: " << endl;
-	//	cout << result << endl;
-	//	h.decode(result);
-	//	result(0, i) ^= 1;
-	//	i++;
-	//}
-	//h.printP();
-	//h.printG();
-	//h.printH();
-	//cout << "Result: " << endl;
-	/*cout << result << endl;
-	MatrixXi decoded = h.decode(result);
-	cout << "Decoded data: " << endl;
-	cout << decoded << endl;
-	cout << "Data: " << endl;
-	 cout << data << endl;*/
-	//cout << endl;
-	//h.eye();
-	//h.print(h.I);
-	return 0;
-}
+//
+//int main() {
+//	vector<int> input = { 1, 1, 0, 1 };
+//	vector<int> output = encoder(input);
+//	cout << endl;
+//	cout <<"simulating error "<<endl;
+//	for (int i = 0; i < output.size(); i++) {
+//		cout << "Error at index " << i << endl;
+//		output[i] ^= 1;
+//		decoder(output);
+//		output[i] ^= 1;
+//	}
+//
+//
+//	//MatrixXi data(1,11);
+//	//data << 1,1,0,0,0,0,1,0,0,1,0;
+//	//Hamming h(data);
+//	////h.printI();
+//	////h.fillP();
+//	////h.printP();
+//	////h.generateG();
+//	////h.printG();
+//	//MatrixXi result(1, 15);
+//	//cout << endl;
+//	//result = h.encode();
+//
+//	////cout<< "result: "<<endl;
+//	////cout << result << endl;
+//	////result(0, 3) ^= 1;
+//	////h.decode(result);
+//	//cout << "Simulating error: " << endl;
+//	//for (int i = 0; i < h.n;) {
+//	//	cout <<endl << "Error at index " << i << endl;
+//	//	cout << "Result without error: " << endl;
+//	//	cout << result << endl;
+//	//	result(0, i) ^= 1;
+//	//	cout << "Result with error: " << endl;
+//	//	cout << result << endl;
+//	//	h.decode(result);
+//	//	result(0, i) ^= 1;
+//	//	i++;
+//	//}
+//	////h.printP();
+//	////h.printG();
+//	////h.printH();
+//	////cout << "Result: " << endl;
+//	///*cout << result << endl;
+//	//MatrixXi decoded = h.decode(result);
+//	//cout << "Decoded data: " << endl;
+//	//cout << decoded << endl;
+//	//cout << "Data: " << endl;
+//	// cout << data << endl;*/
+//	////cout << endl;
+//	////h.eye();
+//	////h.print(h.I);
+//	return 0;
+//}
